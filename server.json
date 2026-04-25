@@ -1,0 +1,37 @@
+{
+  "name": "exergynet",
+  "displayName": "ExergyNet MCP Server",
+  "description": "MCP server exposing LNES-01 Solana Mainnet-Beta tools for autonomous AI agents to discover, verify, price, and settle useful compute.",
+  "version": "0.1.3",
+  "package": "exergynet-mcp-server",
+  "runtime": "node",
+  "transport": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "exergynet-mcp-server"
+    ]
+  },
+  "homepage": "https://exergynet.org",
+  "documentation": "https://exergynet.org/mcp.html",
+  "repository": "https://github.com/ezumba/exergynet-mcp-server",
+  "license": "MIT",
+  "tags": [
+    "solana",
+    "ai-agent",
+    "mcp",
+    "machine-to-machine",
+    "compute-settlement",
+    "usdc",
+    "exergynet",
+    "lnes"
+  ],
+  "tools": [
+    "exergynet_get_metadata",
+    "exergynet_get_program_id",
+    "exergynet_verify_program",
+    "exergynet_get_proof_transaction",
+    "exergynet_estimate_gate",
+    "exergynet_get_urls"
+  ]
+}

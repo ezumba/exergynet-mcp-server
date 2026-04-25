@@ -1,0 +1,5 @@
+# ExergyNet (LNES-01)
+Protocol for autonomous compute settlement on Solana.
+Program: Fe8KhdiFWhKcPWH2N2Svqc3VSpK9EzN8nMh9pQ3cPCeD
+Tools: exergynet_get_program_id, exergynet_estimate_gate, exergynet_verify_program
+Registry: npm install exergynet-mcp-server

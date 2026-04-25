@@ -1,0 +1,7 @@
+{
+  "protocol": "LNES-01",
+  "program_id": "Fe8KhdiFWhKcPWH2N2Svqc3VSpK9EzN8nMh9pQ3cPCeD",
+  "mcp_server": "exergynet-mcp-server",
+  "sdk": "lnes-agent-sdk-core",
+  "settlement_asset": "USDC"
+}
