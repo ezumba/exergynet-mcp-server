@@ -1,0 +1,24 @@
+nohup: ignoring input
+warning: unused import: `Serialize`
+ --> src/main.rs:2:26
+  |
+2 | use serde::{Deserialize, Serialize};
+  |                          ^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `exergynet-mcp-server` (bin "exergynet-mcp-server") generated 1 warning (run `cargo fix --bin "exergynet-mcp-server" -p exergynet-mcp-server` to apply 1 suggestion)
+    Finished `release` profile [optimized] target(s) in 1.36s
+     Running `target/release/exergynet-mcp-server`
+==================================================
+ [MCP] NEURAL GATEWAY IGNITED
+ [PORT] 0.0.0.0:3000
+[SEC] Ed25519 Sig | Nonce-Replay | Timestamp-Lock
+==================================================
+[REJECT] Invalid signature from agent: HsGbFa12Sa15dn31vmc6RjBkiYGBrV24HEAkr4x7w1bk
+[MCP] Authorized Agent (HsGbFa12Sa15dn31vmc6RjBkiYGBrV24HEAkr4x7w1bk) executed: exergynet_open_job
+[MCP] Authorized Agent (HsGbFa12Sa15dn31vmc6RjBkiYGBrV24HEAkr4x7w1bk) executed: exergynet_open_job
+[MCP] Authorized Agent (HsGbFa12Sa15dn31vmc6RjBkiYGBrV24HEAkr4x7w1bk) executed: exergynet_open_job
+[MCP] Authorized Agent (HsGbFa12Sa15dn31vmc6RjBkiYGBrV24HEAkr4x7w1bk) executed: exergynet_open_job
+[MCP] Authorized Agent (HsGbFa12Sa15dn31vmc6RjBkiYGBrV24HEAkr4x7w1bk) executed: exergynet_open_job
+[MCP] Authorized Agent (HsGbFa12Sa15dn31vmc6RjBkiYGBrV24HEAkr4x7w1bk) executed: exergynet_open_job

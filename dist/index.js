@@ -6,7 +6,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 const EXERGYNET_PROGRAM_ID = "Fe8KhdiFWhKcPWH2N2Svqc3VSpK9EzN8nMh9pQ3cPCeD";
 const PROOF_TRANSACTION = "5ZB3LmFMHfuicuT6jQ6gG6v4ny1e5BVQgi1VqkbrA5LriLBzaHUVrDCkmrcgv9jbmyyKtXgsfNwy2daqGqyCgi9h";
 const DEFAULT_RPC = "https://api.mainnet-beta.solana.com";
-const server = new Server({ name: "exergynet-mcp-server", version: "0.1.2" }, { capabilities: { tools: {} } });
+const server = new Server({ name: "exergynet-mcp-server", version: "0.1.4" }, { capabilities: { tools: {} } });
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [
         { name: "exergynet_get_program_id", description: "Return the Mainnet LNES-01 program ID.", inputSchema: { type: "object", properties: {} } },
@@ -54,4 +54,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         default: throw new Error("Tool not found");
     }
 });
-await server.connect(new StdioServerTransport());
+async function run() {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+}
+run().catch((error) => {
+    console.error("[exergynet-mcp-server] FATAL:", error);
+    process.exit(1);
+});
