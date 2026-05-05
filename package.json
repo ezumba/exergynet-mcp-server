@@ -1,6 +1,6 @@
 {
   "name": "@ezumba/exergynet-mcp-server",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "MCP server for ExergyNet LNES-01 autonomous compute settlement on Solana.",
   "type": "module",
   "bin": {
