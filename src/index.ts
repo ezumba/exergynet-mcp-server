@@ -8,7 +8,7 @@ const EXERGYNET_PROGRAM_ID = "Fe8KhdiFWhKcPWH2N2Svqc3VSpK9EzN8nMh9pQ3cPCeD";
 const PROOF_TRANSACTION = "5ZB3LmFMHfuicuT6jQ6gG6v4ny1e5BVQgi1VqkbrA5LriLBzaHUVrDCkmrcgv9jbmyyKtXgsfNwy2daqGqyCgi9h";
 const DEFAULT_RPC = "https://api.mainnet-beta.solana.com";
 
-const server = new Server({ name: "exergynet-mcp-server", version: "0.1.2" }, { capabilities: { tools: {} } });
+const server = new Server({ name: "exergynet-mcp-server", version: "0.1.4" }, { capabilities: { tools: {} } });
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools:[
@@ -60,4 +60,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-await server.connect(new StdioServerTransport());
+async function run() {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+}
+run().catch((error) => {
+    console.error("[exergynet-mcp-server] FATAL:", error);
+    process.exit(1);
+});
