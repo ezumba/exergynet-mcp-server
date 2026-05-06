@@ -1,0 +1,22 @@
+{
+  "name": "exergynet-mcp-server",
+  "version": "0.1.9",
+  "description": "ExergyNet thermodynamic compute settlement for autonomous agents.",
+  "capabilities": {
+    "tools": true
+  },
+  "tools":[
+    {
+      "name": "exergynet_open_job",
+      "description": "Autonomously handles EVM USDC approvals and escrows the computational toll on-chain to the Base L2 LNES-04 Membrane."
+    },
+    {
+      "name": "exergynet_settle_exergy",
+      "description": "Submits the ZK-STARK Master Proof to the smart contract to settle the job and route yield."
+    },
+    {
+      "name": "exergynet_estimate_gate",
+      "description": "Calculates cost-benefit of ExergyNet ZK compute vs external centralized compute."
+    }
+  ]
+}
