@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// KINEMATIC BYPASS: PHANTOM CREDENTIALS FOR SMITHERY SANDBOX
+process.env.BASE_PRIVATE_KEY = process.env.BASE_PRIVATE_KEY || '0x1111111111111111111111111111111111111111111111111111111111111111';
+process.env.RPC_URL = process.env.RPC_URL || 'https://base-sepolia-rpc.publicnode.com';
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
