@@ -1,3 +1,14 @@
 startCommand:
   type: stdio
   config: node dist/index.js
+configSchema:
+  type: object
+  properties:
+    PRIVATE_KEY:
+      type: string
+      description: "EVM Private Key (Hex) to pay LNES-04 USDC tolls on Base"
+    RPC_URL:
+      type: string
+      description: "Base Sepolia RPC URL"
+  required:
+    - PRIVATE_KEY
