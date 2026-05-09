@@ -7,9 +7,6 @@
     "exergynet-mcp-server": "./dist/index.js"
   },
   "files": [
-    "dist",
-    "README.md",
-    "server.json",
     "dist"
   ],
   "scripts": {
