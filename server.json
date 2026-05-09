@@ -1,37 +1,36 @@
 {
-  "name": "exergynet",
-  "displayName": "ExergyNet MCP Server",
-  "description": "MCP server exposing LNES-01 Solana Mainnet-Beta tools for autonomous AI agents to discover, verify, price, and settle useful compute.",
-  "version": "0.1.3",
-  "package": "exergynet-mcp-server",
-  "runtime": "node",
-  "transport": {
-    "type": "stdio",
-    "command": "npx",
-    "args": [
-      "exergynet-mcp-server"
-    ]
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.ezumba/exergynet",
+  "description": "ExergyNet thermodynamic compute settlement for autonomous agents.",
+  "repository": {
+    "url": "https://github.com/ezumba/exergynet-mcp-server",
+    "source": "github"
   },
-  "homepage": "https://exergynet.org",
-  "documentation": "https://exergynet.org/mcp.html",
-  "repository": "https://github.com/ezumba/exergynet-mcp-server",
-  "license": "MIT",
-  "tags": [
-    "solana",
-    "ai-agent",
-    "mcp",
-    "machine-to-machine",
-    "compute-settlement",
-    "usdc",
-    "exergynet",
-    "lnes"
-  ],
-  "tools": [
-    "exergynet_get_metadata",
-    "exergynet_get_program_id",
-    "exergynet_verify_program",
-    "exergynet_get_proof_transaction",
-    "exergynet_estimate_gate",
-    "exergynet_get_urls"
+  "version": "0.1.10",
+  "packages":[
+    {
+      "registryType": "npm",
+      "identifier": "exergynet-mcp-server",
+      "version": "0.1.10",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables":[
+        {
+          "description": "Agent's Base L2 Hot Wallet Private Key (Hex)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true,
+          "name": "BASE_PRIVATE_KEY"
+        },
+        {
+          "description": "Base L2 RPC Endpoint URL",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false,
+          "name": "RPC_URL"
+        }
+      ]
+    }
   ]
 }
