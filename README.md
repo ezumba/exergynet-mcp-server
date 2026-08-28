@@ -10,9 +10,20 @@
 
 **A prior version of this package (versions up to and including 0.2.2) shipped a working `exergynet_open_job` tool that, once a user configured a real wallet, sent a real Base Mainnet transaction — including an unconditional, unlimited USDC spending approval — to a contract address that ExergyNet's own status page identifies as retired, with access control that cannot be independently verified.** No evidence was found of any independent (non-developer) wallet ever having used this path. Full detail: [`MCP_SECURITY_ADVISORY_2026-08-28.md`](https://github.com/ezumba/exergynet-site/blob/main/MCP_SECURITY_ADVISORY_2026-08-28.md) in the `exergynet-site` repository.
 
-**As of 0.2.3, `exergynet_open_job` is disabled.** It always returns a fail-closed message and does not construct, sign, or submit any transaction under any configuration. This version has no signing dependency at all (`ethers` and `viem` have been removed) and does not read or require any private key.
+**As of 0.2.3, `exergynet_open_job` is disabled.** It always returns a fail-closed message and does not construct, sign, or submit any transaction under any configuration. This version has no signing dependency at all (`ethers` and `viem` have been removed) and does not read or require any private key. **0.2.4** additionally fixes input-validation and audit-logging gaps found by an independent MCP security scan — see below.
 
 If you installed a version before 0.2.3 and configured a real `BASE_PRIVATE_KEY`, revoke any USDC approval you may have granted to `0x5cfE075149776f4b3cca07a27D4fd85A60BA5e3f` on Base Mainnet (e.g. via [revoke.cash](https://revoke.cash/address/0x5cfE075149776f4b3cca07a27D4fd85A60BA5e3f?chainId=8453)) and upgrade immediately.
+
+## Independent security scan remediation (0.2.4)
+
+An earlier build (0.1.10) was independently scanned by MCP Vouch against the OWASP MCP Top 10 and scored 71/100 (Grade C), with four warnings: input validation, audit/telemetry, rate limiting, and supply chain risk. 0.2.4 addresses all four in the current tool set:
+
+- **Input validation:** `exergynet_estimate_gate` and `exergynet_verify_program` now reject non-finite, negative, or malformed input with a clear error instead of silently coercing it.
+- **Audit/telemetry:** every tool call is logged to stderr with a timestamp and outcome.
+- **Rate limiting:** `exergynet_verify_program` (the only tool making an outbound network call) is limited to 20 calls per 10-second window.
+- **Supply chain:** `ethers`/`viem` were already removed in 0.2.3. `npm audit fix` was applied for the remaining transitive `ws` vulnerability. Three moderate-severity transitive advisories (via `@solana/web3.js` → `jayson` → `uuid`) remain open because the only available fix is a breaking downgrade of `@solana/web3.js` to a non-functional pre-1.0 version — tracked, not silently ignored.
+
+A fresh independent rescan will be requested once this version is published; results (old vs. new) will be recorded rather than the 71/100 figure being quietly dropped.
 
 ---
 
