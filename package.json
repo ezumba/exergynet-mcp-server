@@ -1,6 +1,6 @@
 {
   "name": "exergynet-mcp-server",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Read-only MCP lookups for the ExergyNet LNES-01/LNES-03 Solana program, plus a local compute-cost estimator. Write settlement (exergynet_open_job) is disabled pending a verified Base L2 contract migration \u2014 see the security advisory linked in the README.",
   "type": "module",
   "bin": {
@@ -9,15 +9,18 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "build": "tsc && chmod +x dist/index.js",
     "start": "node dist/index.js",
     "prepublishOnly": "npm run build",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "test:consumer-install": "node scripts/verify-consumer-install.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "@solana/web3.js": "^1.95.0"
+    "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -42,10 +45,5 @@
     "url": "https://github.com/ezumba/exergynet-mcp-server/issues"
   },
   "license": "MIT",
-  "mcpName": "io.github.ezumba/exergynet",
-  "overrides": {
-    "jayson": {
-      "uuid": "^11.1.1"
-    }
-  }
+  "mcpName": "io.github.ezumba/exergynet"
 }

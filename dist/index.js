@@ -66,7 +66,33 @@ function validateRpcUrl(value) {
 // access-control-unverifiable contract. See MCP_SECURITY_ADVISORY_2026-08-28.md
 // in the exergynet-site repository for full detail.
 const OPEN_JOB_DISABLED_MESSAGE = "Write settlement is temporarily unavailable while the current contract integration is being migrated. No transaction was created. See https://exergynet.org/proof.html for current settlement status.";
-const server = new Server({ name: "exergynet-mcp-server", version: "0.2.5" }, { capabilities: { tools: {} } });
+// Single read-only Solana JSON-RPC call (getAccountInfo), implemented directly
+// against fetch. This is the entire runtime surface that previously required
+// @solana/web3.js — that dependency (and the jayson/uuid chain it pulled in,
+// which produced moderate npm audit findings for real downstream consumers
+// even though the source tree's own `overrides` masked them locally — see
+// MCP_RELEASE_PROVENANCE_0.2.6.md) has been removed rather than patched.
+async function getSolanaAccountInfo(rpcUrl, base58PublicKey) {
+    const res = await fetch(rpcUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "getAccountInfo",
+            params: [base58PublicKey, { encoding: "base64", commitment: "confirmed" }]
+        })
+    });
+    if (!res.ok) {
+        throw new Error(`RPC request failed: ${res.status} ${res.statusText}`);
+    }
+    const json = await res.json();
+    if (json.error) {
+        throw new Error(`RPC error: ${json.error.message ?? JSON.stringify(json.error)}`);
+    }
+    return json.result?.value ?? null;
+}
+const server = new Server({ name: "exergynet-mcp-server", version: "0.2.6" }, { capabilities: { tools: {} } });
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [
         {
@@ -138,9 +164,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     return { content: [{ type: "text", text: `RATE_LIMITED: max ${RATE_LIMIT_MAX_CALLS} calls per ${RATE_LIMIT_WINDOW_MS / 1000}s` }] };
                 }
                 const rpcUrl = validateRpcUrl(args.rpcUrl) || "https://api.mainnet-beta.solana.com";
-                const { Connection, PublicKey } = await import("@solana/web3.js");
-                const connection = new Connection(rpcUrl, "confirmed");
-                const info = await connection.getAccountInfo(new PublicKey(LNES03_PROGRAM_ID));
+                const info = await getSolanaAccountInfo(rpcUrl, LNES03_PROGRAM_ID);
                 auditLog(toolName, "ok");
                 return { content: [{ type: "text", text: JSON.stringify({ exists: info !== null, executable: info?.executable }) }] };
             }
