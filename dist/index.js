@@ -66,7 +66,7 @@ function validateRpcUrl(value) {
 // access-control-unverifiable contract. See MCP_SECURITY_ADVISORY_2026-08-28.md
 // in the exergynet-site repository for full detail.
 const OPEN_JOB_DISABLED_MESSAGE = "Write settlement is temporarily unavailable while the current contract integration is being migrated. No transaction was created. See https://exergynet.org/proof.html for current settlement status.";
-const server = new Server({ name: "exergynet-mcp-server", version: "0.2.4" }, { capabilities: { tools: {} } });
+const server = new Server({ name: "exergynet-mcp-server", version: "0.2.5" }, { capabilities: { tools: {} } });
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [
         {

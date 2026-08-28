@@ -1,6 +1,6 @@
 {
   "name": "exergynet-mcp-server",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Read-only MCP lookups for the ExergyNet LNES-03 Solana program, plus a local compute-cost estimator. exergynet_open_job is disabled pending a verified Base L2 contract migration.",
   "capabilities": {
     "tools": true

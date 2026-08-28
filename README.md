@@ -21,9 +21,9 @@ An earlier build (0.1.10) was independently scanned by MCP Vouch against the OWA
 - **Input validation:** `exergynet_estimate_gate` and `exergynet_verify_program` now reject non-finite, negative, or malformed input with a clear error instead of silently coercing it.
 - **Audit/telemetry:** every tool call is logged to stderr with a timestamp and outcome.
 - **Rate limiting:** `exergynet_verify_program` (the only tool making an outbound network call) is limited to 20 calls per 10-second window.
-- **Supply chain:** `ethers`/`viem` were already removed in 0.2.3. `npm audit fix` was applied for the remaining transitive `ws` vulnerability. Three moderate-severity transitive advisories (via `@solana/web3.js` → `jayson` → `uuid`) remain open because the only available fix is a breaking downgrade of `@solana/web3.js` to a non-functional pre-1.0 version — tracked, not silently ignored.
+- **Supply chain:** `ethers`/`viem` were already removed in 0.2.3. `npm audit fix` was applied for the transitive `ws` vulnerability in 0.2.4. The remaining moderate-severity `uuid` advisory (reachable via `@solana/web3.js` → `jayson` → `uuid@8.3.2`) is resolved in **0.2.5** with a targeted `overrides` entry pinning `jayson`'s `uuid` dependency to `^11.1.1`, without downgrading `@solana/web3.js` itself. `npm audit` reports 0 vulnerabilities after this change. Verified safe, not just applied blindly: full rebuild, all 9 regression tests passing, and a live network call through `exergynet_verify_program` against Solana Mainnet-Beta confirmed the override doesn't change RPC behavior.
 
-A fresh independent rescan will be requested once this version is published; results (old vs. new) will be recorded rather than the 71/100 figure being quietly dropped.
+A fresh independent rescan will be requested once a version is published; results (old vs. new) will be recorded rather than the 71/100 figure being quietly dropped.
 
 ---
 
