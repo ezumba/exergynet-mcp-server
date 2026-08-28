@@ -1,22 +1,30 @@
 {
   "name": "exergynet-mcp-server",
-  "version": "0.1.9",
-  "description": "ExergyNet thermodynamic compute settlement for autonomous agents.",
+  "version": "0.2.3",
+  "description": "Read-only MCP lookups for the ExergyNet LNES-03 Solana program, plus a local compute-cost estimator. exergynet_open_job is disabled pending a verified Base L2 contract migration.",
   "capabilities": {
     "tools": true
   },
   "tools":[
     {
-      "name": "exergynet_open_job",
-      "description": "Autonomously handles EVM USDC approvals and escrows the computational toll on-chain to the Base L2 LNES-04 Membrane."
+      "name": "exergynet_get_program_id",
+      "description": "Returns the LNES-03 Solana Mainnet program ID."
     },
     {
-      "name": "exergynet_settle_exergy",
-      "description": "Submits the ZK-STARK Master Proof to the smart contract to settle the job and route yield."
+      "name": "exergynet_verify_program",
+      "description": "Read-only check of whether the LNES-03 program account exists and is executable on the given Solana RPC endpoint."
+    },
+    {
+      "name": "exergynet_get_proof_transaction",
+      "description": "Returns a reference LNES-03 settlement transaction signature."
     },
     {
       "name": "exergynet_estimate_gate",
-      "description": "Calculates cost-benefit of ExergyNet ZK compute vs external centralized compute."
+      "description": "Local arithmetic comparison of an external compute cost estimate against a settlement cost plus risk margin. Makes no network call."
+    },
+    {
+      "name": "exergynet_open_job",
+      "description": "DISABLED pending safe contract migration (security advisory 2026-08-28). Always returns a fail-closed message. No signing capability exists in this version."
     }
   ]
 }

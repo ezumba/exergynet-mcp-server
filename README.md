@@ -1,12 +1,18 @@
 # exergynet-mcp-server
 
-> The official MCP server for the **ExergyNet** thermodynamic compute clearinghouse.
+> Read-only MCP lookups for the ExergyNet LNES-03 program on Solana, plus a local compute-cost estimator. Part of ExergyNet, model-independent infrastructure for useful AI work and persistent state — see [exergynet.org](https://exergynet.org).
 
 [![npm version](https://img.shields.io/npm/v/exergynet-mcp-server)](https://www.npmjs.com/package/exergynet-mcp-server)
 [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.ezumba%2Fexergynet-blue)](https://registry.modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-ExergyNet operates the **LNES-04 protocol** on the Base L2 EVM, enabling autonomous agents to natively request Zero-Knowledge verified off-chain compute directly from the blockchain.
+## Security advisory (2026-08-28)
+
+**A prior version of this package (versions up to and including 0.2.2) shipped a working `exergynet_open_job` tool that, once a user configured a real wallet, sent a real Base Mainnet transaction — including an unconditional, unlimited USDC spending approval — to a contract address that ExergyNet's own status page identifies as retired, with access control that cannot be independently verified.** No evidence was found of any independent (non-developer) wallet ever having used this path. Full detail: [`MCP_SECURITY_ADVISORY_2026-08-28.md`](https://github.com/ezumba/exergynet-site/blob/main/MCP_SECURITY_ADVISORY_2026-08-28.md) in the `exergynet-site` repository.
+
+**As of 0.2.3, `exergynet_open_job` is disabled.** It always returns a fail-closed message and does not construct, sign, or submit any transaction under any configuration. This version has no signing dependency at all (`ethers` and `viem` have been removed) and does not read or require any private key.
+
+If you installed a version before 0.2.3 and configured a real `BASE_PRIVATE_KEY`, revoke any USDC approval you may have granted to `0x5cfE075149776f4b3cca07a27D4fd85A60BA5e3f` on Base Mainnet (e.g. via [revoke.cash](https://revoke.cash/address/0x5cfE075149776f4b3cca07a27D4fd85A60BA5e3f?chainId=8453)) and upgrade immediately.
 
 ---
 
@@ -20,14 +26,11 @@ npx -y exergynet-mcp-server
 
 ```bash
 claude mcp add --transport stdio \
-  --env BASE_PRIVATE_KEY=your_hex_private_key \
-  --env RPC_URL=your_base_rpc_url \
+  --env RPC_URL=your_solana_rpc_url \
   exergynet -- npx -y exergynet-mcp-server
 ```
 
 ### Claude Desktop / ElizaOS / Other MCP Clients
-
-Add to your MCP config file:
 
 ```json
 {
@@ -36,51 +39,32 @@ Add to your MCP config file:
       "command": "npx",
       "args": ["-y", "exergynet-mcp-server"],
       "env": {
-        "BASE_PRIVATE_KEY": "your_hex_private_key",
-        "RPC_URL": "your_base_rpc_url"
+        "RPC_URL": "your_solana_rpc_url"
       }
     }
   }
 }
 ```
 
----
-
-## Overview
-
-ExergyNet is a compute clearinghouse where agents pay for ZK-verified off-chain computation using on-chain USDC escrow. Rather than arbitrary pricing, resources are settled via the **LNES-04 protocol** — a thermodynamic accounting standard enforced on Base L2.
-
-Agents using this server can autonomously:
-
-- Request **ZK-verified off-chain compute** directly from the blockchain
-- Handle **USDC approvals and on-chain escrow** without human intervention
-- Pay **computational tolls** trustlessly via smart contract
+**No private key or wallet credential is required or accepted by this server.** `RPC_URL` is optional and defaults to the public Solana Mainnet-Beta endpoint.
 
 ---
 
-## Configuration
+## Tools
 
-| Variable | Required | Description |
+| Tool | What it does | Can it move funds or sign anything? |
 |---|---|---|
-| `BASE_PRIVATE_KEY` | ✅ Yes | Agent's hot wallet private key (hex). Must hold Base Sepolia or Mainnet USDC to pay compute tolls. |
-| `RPC_URL` | ✅ Yes | Base L2 EVM RPC endpoint URL |
+| `exergynet_get_program_id` | Returns the LNES-03 Solana program ID | No — static value, no network call |
+| `exergynet_verify_program` | Read-only check that the LNES-03 program account exists and is executable | No — a single read-only RPC call |
+| `exergynet_get_proof_transaction` | Returns a reference LNES-03 settlement transaction signature | No — static value |
+| `exergynet_estimate_gate` | Local arithmetic comparing an external compute cost to a settlement cost + risk margin you provide | No — no network call at all |
+| `exergynet_open_job` | **Disabled.** Always returns a fail-closed message | No — by construction; the tool has no signing capability in this version |
 
-> ⚠️ **Security**: `BASE_PRIVATE_KEY` is a live signing key used for on-chain transactions. Use a dedicated agent wallet funded only with what's needed for operations.
+### Write-tool maturity
 
-### Getting a Base RPC URL
+`exergynet_open_job` will remain disabled until a current Base L2 execution target is independently verified end-to-end — correct chain ID, correct contract identity, matching ABI, and a live settlement path (a real prover producing the ZK receipt that `settleExergy` requires) — and that verification is documented publicly. A version that re-enables it will state exactly which contract it targets and how a caller can independently confirm that before any transaction is possible. Until then: **no ExergyNet MCP tool in this package will ever ask for a private key or send a transaction.**
 
-- [Alchemy](https://www.alchemy.com/) — `https://base-mainnet.g.alchemy.com/v2/YOUR_KEY`
-- [Infura](https://infura.io/) — `https://base-mainnet.infura.io/v3/YOUR_KEY`
-- Public (rate-limited) — `https://mainnet.base.org`
-- Testnet (Sepolia) — `https://sepolia.base.org`
-
----
-
-## Autonomous Agent Tools
-
-### `exergynet_open_job`
-
-Autonomously handles EVM USDC approvals and escrows the computational toll on-chain. This single tool manages the full lifecycle of submitting a compute job to the ExergyNet clearinghouse — approval, escrow, and job registration — without requiring human confirmation at each step.
+For current, verified Base L2 contract addresses and settlement status, see [exergynet.org/proof.html](https://exergynet.org/proof.html) — do not rely on any address that may appear in an older cached copy of this README or an MCP directory listing that hasn't recrawled this repository yet.
 
 ---
 

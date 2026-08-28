@@ -1,5 +1,9 @@
-# ExergyNet (LNES-01)
-Protocol for autonomous compute settlement on Solana.
-Program: Fe8KhdiFWhKcPWH2N2Svqc3VSpK9EzN8nMh9pQ3cPCeD
-Tools: exergynet_get_program_id, exergynet_estimate_gate, exergynet_verify_program
-Registry: npm install exergynet-mcp-server
+# ExergyNet MCP Server (LNES-03)
+Read-only MCP lookups against the ExergyNet LNES-03 program on Solana Mainnet-Beta, plus a
+local compute-vs-settlement cost estimator. Does not hold funds, sign transactions, or require
+a private key. exergynet_open_job is disabled pending a verified Base L2 contract migration —
+see the security advisory in the exergynet-site repository (MCP_SECURITY_ADVISORY_2026-08-28.md).
+Program: 7BCPpUMBxQMPomsgTaJsQdLEfycNwPWqkQD1Cea4CcCL
+Tools: exergynet_get_program_id, exergynet_verify_program, exergynet_get_proof_transaction, exergynet_estimate_gate, exergynet_open_job (disabled, fail-closed)
+Install: npx -y exergynet-mcp-server
+Part of ExergyNet, model-independent infrastructure for useful AI work and persistent state: https://exergynet.org

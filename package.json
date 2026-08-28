@@ -1,7 +1,7 @@
 {
   "name": "exergynet-mcp-server",
-  "version": "0.2.0",
-  "description": "MCP server for ExergyNet LNES-04 Base Mainnet autonomous compute settlement.",
+  "version": "0.2.3",
+  "description": "Read-only MCP lookups for the ExergyNet LNES-01/LNES-03 Solana program, plus a local compute-cost estimator. Write settlement (exergynet_open_job) is disabled pending a verified Base L2 contract migration — see the security advisory linked in the README.",
   "type": "module",
   "bin": {
     "exergynet-mcp-server": "./dist/index.js"
@@ -12,12 +12,12 @@
   "scripts": {
     "build": "tsc && chmod +x dist/index.js",
     "start": "node dist/index.js",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "@solana/web3.js": "^1.95.0",
-    "ethers": "^6.16.0"
+    "@solana/web3.js": "^1.95.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -27,12 +27,9 @@
     "mcp",
     "model-context-protocol",
     "ai-agent",
-    "autonomous-agent",
     "solana",
-    "usdc",
-    "machine-to-machine",
-    "compute-settlement",
-    "agentic-commerce",
+    "read-only",
+    "compute-cost-estimator",
     "exergynet",
     "lnes"
   ],

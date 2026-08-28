@@ -1,74 +1,102 @@
 #!/usr/bin/env node
-// KINEMATIC BYPASS: PHANTOM CREDENTIALS FOR SMITHERY SANDBOX
-process.env.BASE_PRIVATE_KEY = process.env.BASE_PRIVATE_KEY || '0x1111111111111111111111111111111111111111111111111111111111111111';
-process.env.RPC_URL = process.env.RPC_URL || 'https://base-sepolia-rpc.publicnode.com';
-
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { Connection, PublicKey } from "@solana/web3.js";
 
-const EXERGYNET_PROGRAM_ID = "Fe8KhdiFWhKcPWH2N2Svqc3VSpK9EzN8nMh9pQ3cPCeD";
-const PROOF_TRANSACTION = "5ZB3LmFMHfuicuT6jQ6gG6v4ny1e5BVQgi1VqkbrA5LriLBzaHUVrDCkmrcgv9jbmyyKtXgsfNwy2daqGqyCgi9h";
-const DEFAULT_RPC = "https://api.mainnet-beta.solana.com";
+// LNES-03 Solana coordinates (read-only tools only — no signing, no funds, no private key).
+const LNES03_PROGRAM_ID = "7BCPpUMBxQMPomsgTaJsQdLEfycNwPWqkQD1Cea4CcCL";
+const PROOF_TX = "3MFnUnvVN2EbnUC3gPAWWERCNz283672Xus8iGZqWihvnQkndExNKnGHoGBgjb4aqs1pyke2iKWihPgMnQUvPiZe";
 
-const server = new Server({ name: "exergynet-mcp-server", version: "0.1.4" }, { capabilities: { tools: {} } });
+// SECURITY ADVISORY 2026-08-28: exergynet_open_job is disabled in this and all
+// future versions until a verified current Base L2 execution target is
+// established end-to-end (contract identity check + live settlement path).
+// A prior version of this package sent USDC approvals toward a retired,
+// access-control-unverifiable contract. See MCP_SECURITY_ADVISORY_2026-08-28.md
+// in the exergynet-site repository for full detail.
+const OPEN_JOB_DISABLED_MESSAGE =
+  "Write settlement is temporarily unavailable while the current contract integration is being migrated. No transaction was created. See https://exergynet.org/proof.html for current settlement status.";
+
+const server = new Server({ name: "exergynet-mcp-server", version: "0.2.3" }, { capabilities: { tools: {} } });
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools:[
-    { name: "exergynet_get_program_id", description: "Return the Mainnet LNES-01 program ID.", inputSchema: { type: "object", properties: {} } },
-    { name: "exergynet_verify_program", description: "Check if LNES-01 is live on Mainnet.", inputSchema: { type: "object", properties: { rpcUrl: { type: "string" } }, additionalProperties: false } },
-    { name: "exergynet_get_proof_transaction", description: "Return the proven SettleExergy transaction signature.", inputSchema: { type: "object", properties: {} } },
-    { 
-        name: "exergynet_estimate_gate", 
-        description: "Calculate exergy-gate profitability.", 
-        inputSchema: { 
-            type: "object", 
-            required:["externalComputeCostUsd", "settlementCostUsd"], 
-            properties: { 
-                externalComputeCostUsd: { type: "number" }, 
-                settlementCostUsd: { type: "number" }, 
-                riskMarginUsd: { type: "number" } 
-            } 
-        } 
-    }
-  ]
+    tools: [
+        {
+            name: "exergynet_open_job",
+            description: "DISABLED pending safe contract migration (security advisory 2026-08-28). Always returns a fail-closed message. Does not construct, sign, or submit any transaction, and does not read or require any private key.",
+            inputSchema: { type: "object", properties: {} }
+        },
+        {
+            name: "exergynet_estimate_gate",
+            description: "Local arithmetic only. Compares an external compute cost estimate against a settlement cost plus risk margin. Makes no network call and touches no on-chain state.",
+            inputSchema: {
+                type: "object",
+                required: ["externalComputeCostUsd", "settlementCostUsd"],
+                properties: {
+                    externalComputeCostUsd: { type: "number" },
+                    settlementCostUsd: { type: "number" },
+                    riskMarginUsd: { type: "number" }
+                }
+            }
+        },
+        {
+            name: "exergynet_get_program_id",
+            description: "Returns the LNES-03 Solana Mainnet program ID. Does not return a Base L2 contract address — see https://exergynet.org/proof.html for current, verified Base contract addresses and status.",
+            inputSchema: { type: "object", properties: {} }
+        },
+        {
+            name: "exergynet_verify_program",
+            description: "Read-only check of whether the LNES-03 Solana program account exists and is executable on the given (or default) Solana RPC endpoint.",
+            inputSchema: {
+                type: "object",
+                properties: { rpcUrl: { type: "string" } },
+                additionalProperties: false
+            }
+        },
+        {
+            name: "exergynet_get_proof_transaction",
+            description: "Returns a reference LNES-03 settlement transaction signature.",
+            inputSchema: { type: "object", properties: {} }
+        }
+    ]
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const args = (request.params.arguments || {}) as any;
-  switch (request.params.name) {
-    case "exergynet_get_program_id": return { content:[{ type: "text", text: EXERGYNET_PROGRAM_ID }] };
-    case "exergynet_verify_program": {
-      const rpcUrl = (args.rpcUrl as string) || DEFAULT_RPC;
-      const connection = new Connection(rpcUrl, "confirmed");
-      const info = await connection.getAccountInfo(new PublicKey(EXERGYNET_PROGRAM_ID));
-      return { content:[{ type: "text", text: JSON.stringify({ exists: info !== null, executable: info?.executable }) }] };
+    const args = (request.params.arguments || {}) as any;
+    switch (request.params.name) {
+        case "exergynet_open_job":
+            return { content: [{ type: "text", text: OPEN_JOB_DISABLED_MESSAGE }] };
+        case "exergynet_estimate_gate": {
+            const extCost = Number(args.externalComputeCostUsd) || 0;
+            const setCost = Number(args.settlementCostUsd) || 0;
+            const margin = Number(args.riskMarginUsd) || 0;
+            const total = setCost + margin;
+            if (extCost > total) {
+                return { content: [{ type: "text", text: `ACTION: USE_EXERGYNET (Savings: $${(extCost - total).toFixed(4)})` }] };
+            } else {
+                return { content: [{ type: "text", text: `REJECT: Below threshold (Deficit: $${(total - extCost).toFixed(4)})` }] };
+            }
+        }
+        case "exergynet_get_program_id":
+            return { content: [{ type: "text", text: JSON.stringify({ solana_lnes03: LNES03_PROGRAM_ID }) }] };
+        case "exergynet_verify_program": {
+            const { Connection, PublicKey } = await import("@solana/web3.js");
+            const rpcUrl = (args.rpcUrl as string) || "https://api.mainnet-beta.solana.com";
+            const connection = new Connection(rpcUrl, "confirmed");
+            const info = await connection.getAccountInfo(new PublicKey(LNES03_PROGRAM_ID));
+            return { content: [{ type: "text", text: JSON.stringify({ exists: info !== null, executable: info?.executable }) }] };
+        }
+        case "exergynet_get_proof_transaction":
+            return { content: [{ type: "text", text: PROOF_TX }] };
+        default:
+            throw new Error(`Tool not found: ${request.params.name}`);
     }
-    case "exergynet_get_proof_transaction": return { content:[{ type: "text", text: PROOF_TRANSACTION }] };
-    case "exergynet_estimate_gate": {
-      // Corrected Math Evaluation Matrix
-      const extCost = Number(args.externalComputeCostUsd) || 0;
-      const setCost = Number(args.settlementCostUsd) || 0;
-      const margin = Number(args.riskMarginUsd) || 0;
-      
-      const totalCost = setCost + margin;
-      
-      if (extCost > totalCost) {
-          return { content:[{ type: "text", text: `ACTION: USE_EXERGYNET (Margin: ${(extCost - totalCost).toFixed(2)})` }] };
-      } else {
-          return { content:[{ type: "text", text: `REJECT: Below threshold. (Deficit: ${(totalCost - extCost).toFixed(2)})` }] };
-      }
-    }
-    default: throw new Error("Tool not found");
-  }
 });
 
 async function run() {
     const transport = new StdioServerTransport();
     await server.connect(transport);
 }
-run().catch((error) => {
-    console.error("[exergynet-mcp-server] FATAL:", error);
+run().catch((e) => {
+    console.error("[exergynet-mcp-server] FATAL:", e);
     process.exit(1);
 });

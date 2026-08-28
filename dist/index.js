@@ -1,46 +1,28 @@
 #!/usr/bin/env node
-process.env.BASE_PRIVATE_KEY = process.env.BASE_PRIVATE_KEY || '0x1111111111111111111111111111111111111111111111111111111111111111';
-process.env.RPC_URL = process.env.RPC_URL || 'https://mainnet.base.org';
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { ethers } from "ethers";
-import * as crypto from "crypto";
-// CANONICAL LNES-04 COORDINATES
-const MEMBRANE_ADDR = "0x5CFE075149776f4b3cca07a27D4fd85A60BA5e3f";
-const USDC_ADDR = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
-const S3_BUCKET = "exergynet-sump-v1";
-const S3_REGION = "us-east-1";
-// LNES-03 Solana coordinates (for verify/status tools)
+// LNES-03 Solana coordinates (read-only tools only — no signing, no funds, no private key).
 const LNES03_PROGRAM_ID = "7BCPpUMBxQMPomsgTaJsQdLEfycNwPWqkQD1Cea4CcCL";
 const PROOF_TX = "3MFnUnvVN2EbnUC3gPAWWERCNz283672Xus8iGZqWihvnQkndExNKnGHoGBgjb4aqs1pyke2iKWihPgMnQUvPiZe";
-const MEMBRANE_ABI = [
-    "function openJob(bytes32 jobId) external",
-    "function settleExergy(bytes32 jobId, bytes seal, bytes journal, address droneNode) external",
-];
-const USDC_ABI = [
-    "function approve(address spender, uint256 amount) public returns (bool)",
-    "function allowance(address owner, address spender) public view returns (uint256)",
-    "function balanceOf(address account) public view returns (uint256)",
-];
-const server = new Server({ name: "exergynet-mcp-server", version: "0.2.0" }, { capabilities: { tools: {} } });
+// SECURITY ADVISORY 2026-08-28: exergynet_open_job is disabled in this and all
+// future versions until a verified current Base L2 execution target is
+// established end-to-end (contract identity check + live settlement path).
+// A prior version of this package sent USDC approvals toward a retired,
+// access-control-unverifiable contract. See MCP_SECURITY_ADVISORY_2026-08-28.md
+// in the exergynet-site repository for full detail.
+const OPEN_JOB_DISABLED_MESSAGE = "Write settlement is temporarily unavailable while the current contract integration is being migrated. No transaction was created. See https://exergynet.org/proof.html for current settlement status.";
+const server = new Server({ name: "exergynet-mcp-server", version: "0.2.3" }, { capabilities: { tools: {} } });
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [
         {
             name: "exergynet_open_job",
-            description: "Open a compute job on the LNES-04 Base Mainnet membrane. Locks USDC toll into escrow and emits JobOpened event. The S3 key for off-chain payload metadata is sha256(jobId). Returns jobId and S3 metadata key.",
-            inputSchema: {
-                type: "object",
-                required: ["opcode"],
-                properties: {
-                    opcode: { type: "string", description: "Compute opcode e.g. 0x01 for OPTICAL" },
-                    metadata: { type: "object", description: "Optional rich job parameters stored off-chain in S3" }
-                }
-            }
+            description: "DISABLED pending safe contract migration (security advisory 2026-08-28). Always returns a fail-closed message. Does not construct, sign, or submit any transaction, and does not read or require any private key.",
+            inputSchema: { type: "object", properties: {} }
         },
         {
             name: "exergynet_estimate_gate",
-            description: "Calculate whether routing compute through ExergyNet is profitable vs external provider.",
+            description: "Local arithmetic only. Compares an external compute cost estimate against a settlement cost plus risk margin. Makes no network call and touches no on-chain state.",
             inputSchema: {
                 type: "object",
                 required: ["externalComputeCostUsd", "settlementCostUsd"],
@@ -53,12 +35,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         {
             name: "exergynet_get_program_id",
-            description: "Return the canonical LNES-03 Solana program ID and LNES-04 Base contract address.",
+            description: "Returns the LNES-03 Solana Mainnet program ID. Does not return a Base L2 contract address — see https://exergynet.org/proof.html for current, verified Base contract addresses and status.",
             inputSchema: { type: "object", properties: {} }
         },
         {
             name: "exergynet_verify_program",
-            description: "Check if LNES-03 Solana program is live on Mainnet.",
+            description: "Read-only check of whether the LNES-03 Solana program account exists and is executable on the given (or default) Solana RPC endpoint.",
             inputSchema: {
                 type: "object",
                 properties: { rpcUrl: { type: "string" } },
@@ -67,7 +49,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         },
         {
             name: "exergynet_get_proof_transaction",
-            description: "Return the proven Genesis SettleExergy transaction signature.",
+            description: "Returns a reference LNES-03 settlement transaction signature.",
             inputSchema: { type: "object", properties: {} }
         }
     ]
@@ -75,51 +57,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const args = (request.params.arguments || {});
     switch (request.params.name) {
-        case "exergynet_open_job": {
-            const pk = process.env.BASE_PRIVATE_KEY;
-            if (!pk || pk === '0x1111111111111111111111111111111111111111111111111111111111111111') {
-                return { content: [{ type: "text", text: "ERROR: BASE_PRIVATE_KEY not configured in MCP environment." }] };
-            }
-            try {
-                const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || "https://mainnet.base.org");
-                const wallet = new ethers.Wallet(pk, provider);
-                const usdc = new ethers.Contract(USDC_ADDR, USDC_ABI, wallet);
-                const membrane = new ethers.Contract(MEMBRANE_ADDR, MEMBRANE_ABI, wallet);
-                // Generate deterministic 32-byte jobId
-                const jobId = ethers.hexlify(crypto.randomBytes(32));
-                const jobIdBytes = ethers.getBytes(jobId);
-                // S3 metadata key = hex(sha256(jobId)) — Fracture 1 binding
-                const s3Key = crypto.createHash('sha256').update(jobIdBytes).digest('hex');
-                const metadataUrl = `s3://${S3_BUCKET}/${s3Key}_INBOUND.json`;
-                // Check USDC balance
-                const balance = await usdc.balanceOf(wallet.address);
-                if (balance < 2000000n) {
-                    return { content: [{ type: "text", text: `INSUFFICIENT_USDC: Balance ${balance} < 2000000 micro-USDC required for toll.` }] };
-                }
-                // Approve if needed
-                const allowance = await usdc.allowance(wallet.address, MEMBRANE_ADDR);
-                if (allowance < 2000000n) {
-                    const approveTx = await usdc.approve(MEMBRANE_ADDR, ethers.MaxUint256);
-                    await approveTx.wait(1);
-                }
-                // Open job on-chain
-                const tx = await membrane.openJob(jobId, { gasLimit: 300000 });
-                await tx.wait(1);
-                const result = {
-                    status: "JOB_OPENED",
-                    jobId,
-                    s3MetadataKey: s3Key,
-                    metadataUrl,
-                    txHash: tx.hash,
-                    membrane: MEMBRANE_ADDR,
-                    note: "Deposit off-chain payload JSON to metadataUrl. SovereignSiphon will poll for ZK proof and call settleExergy."
-                };
-                return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-            }
-            catch (e) {
-                return { content: [{ type: "text", text: `OPEN_JOB_ERROR: ${e.message}` }] };
-            }
-        }
+        case "exergynet_open_job":
+            return { content: [{ type: "text", text: OPEN_JOB_DISABLED_MESSAGE }] };
         case "exergynet_estimate_gate": {
             const extCost = Number(args.externalComputeCostUsd) || 0;
             const setCost = Number(args.settlementCostUsd) || 0;
@@ -133,12 +72,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }
         }
         case "exergynet_get_program_id":
-            return { content: [{ type: "text", text: JSON.stringify({
-                            solana_lnes03: LNES03_PROGRAM_ID,
-                            base_lnes04: MEMBRANE_ADDR,
-                            usdc_base: USDC_ADDR,
-                            s3_sump: S3_BUCKET
-                        }) }] };
+            return { content: [{ type: "text", text: JSON.stringify({ solana_lnes03: LNES03_PROGRAM_ID }) }] };
         case "exergynet_verify_program": {
             const { Connection, PublicKey } = await import("@solana/web3.js");
             const rpcUrl = args.rpcUrl || "https://api.mainnet-beta.solana.com";
