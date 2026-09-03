@@ -1,10 +1,21 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
 startCommand:
   type: stdio
-  config: node dist/index.js
-configSchema:
-  type: object
-  properties:
-    RPC_URL:
-      type: string
-      description: "Solana RPC endpoint URL. Optional — defaults to the public Solana Mainnet-Beta endpoint."
-  required: []
+  configSchema:
+    type: object
+    properties:
+      rpcUrl:
+        type: string
+        description: >-
+          Solana RPC endpoint URL. Optional — defaults to the public
+          Solana Mainnet-Beta endpoint if not set.
+    additionalProperties: false
+  commandFunction: |-
+    (config) => ({
+      command: "npx",
+      args: ["-y", "exergynet-mcp-server"],
+      env: config.rpcUrl ? { RPC_URL: config.rpcUrl } : {}
+    })
+  exampleConfig:
+    rpcUrl: https://api.mainnet-beta.solana.com
