@@ -1,6 +1,6 @@
 # exergynet-mcp-server
 
-> Read-only MCP lookups for the ExergyNet LNES-03 program on Solana, plus a local compute-cost estimator. Part of ExergyNet, model-independent infrastructure for useful AI work and persistent state — see [exergynet.org](https://exergynet.org).
+> Read-only MCP lookups for the ExergyNet LNES-03 program on Solana, plus a local compute-cost estimator. Part of ExergyNet, model-independent infrastructure for persistent memory, governed execution, and verifiable settlement — see [exergynet.org](https://exergynet.org).
 
 [![npm version](https://img.shields.io/npm/v/exergynet-mcp-server)](https://www.npmjs.com/package/exergynet-mcp-server)
 [![MCP Registry](https://img.shields.io/badge/MCP%20Registry-io.github.ezumba%2Fexergynet-blue)](https://registry.modelcontextprotocol.io)
@@ -27,6 +27,22 @@ A fresh independent rescan will be requested once a version is published; result
 
 ---
 
+## What this package is
+
+**`exergynet-mcp-server`** is the settlement-surface MCP server: read-only LNES-03 Solana program lookups plus a local compute-cost estimator. It is one interface into the broader ExergyNet fabric.
+
+**ExergyNet** is model-independent infrastructure for autonomous AI systems — persistent memory, governed execution, and verifiable settlement. The three primary interfaces are:
+
+| Interface | Package | What it exposes |
+|---|---|---|
+| Local persistent memory | [`@lnes/vanguard-memory-node`](https://www.npmjs.com/package/@lnes/vanguard-memory-node) | BM25 search, SHA-256-addressed shard store, xLMP bounded recall (validated at mean K ≈ 896 tokens across a ~10M-token corpus) |
+| Settlement surface (this package) | `exergynet-mcp-server` | Read-only LNES-03 Solana lookups + compute cost estimator; write settlement (`exergynet_open_job`) disabled pending Base L2 migration |
+| Authority gate | LNES-22 (separate service) | Consequence authorization, delegation receipts, red-team-validated rejection logic |
+
+If you want persistent local memory for your AI agent, install `@lnes/vanguard-memory-node`. If you want to query LNES-03 program state or estimate compute costs, install this package.
+
+---
+
 ## Quick Install
 
 ```bash
@@ -36,9 +52,7 @@ npx -y exergynet-mcp-server
 ### Claude Code
 
 ```bash
-claude mcp add --transport stdio \
-  --env RPC_URL=your_solana_rpc_url \
-  exergynet -- npx -y exergynet-mcp-server
+claude mcp add --transport stdio exergynet -- npx -y exergynet-mcp-server
 ```
 
 ### Claude Desktop / ElizaOS / Other MCP Clients
@@ -48,10 +62,7 @@ claude mcp add --transport stdio \
   "mcpServers": {
     "exergynet": {
       "command": "npx",
-      "args": ["-y", "exergynet-mcp-server"],
-      "env": {
-        "RPC_URL": "your_solana_rpc_url"
-      }
+      "args": ["-y", "exergynet-mcp-server"]
     }
   }
 }
@@ -63,19 +74,40 @@ claude mcp add --transport stdio \
 
 ## Tools
 
-| Tool | What it does | Can it move funds or sign anything? |
-|---|---|---|
-| `exergynet_get_program_id` | Returns the LNES-03 Solana program ID | No — static value, no network call |
-| `exergynet_verify_program` | Read-only check that the LNES-03 program account exists and is executable | No — a single read-only RPC call |
-| `exergynet_get_proof_transaction` | Returns a reference LNES-03 settlement transaction signature | No — static value |
-| `exergynet_estimate_gate` | Local arithmetic comparing an external compute cost to a settlement cost + risk margin you provide | No — no network call at all |
-| `exergynet_open_job` | **Disabled.** Always returns a fail-closed message | No — by construction; the tool has no signing capability in this version |
+| Tool | What it does | Network call? | Can it move funds or sign anything? |
+|---|---|---|---|
+| `exergynet_get_program_id` | Returns the LNES-03 Solana program ID | No — static value | No |
+| `exergynet_verify_program` | Read-only check that the LNES-03 program account exists and is executable on Solana | Yes — one read-only RPC call (rate-limited: 20/10s) | No |
+| `exergynet_get_proof_transaction` | Returns a reference LNES-03 settlement transaction signature | No — static value | No |
+| `exergynet_estimate_gate` | Local arithmetic: compares an external compute cost against a settlement cost + risk margin | No — local arithmetic only | No |
+| `exergynet_open_job` | **Disabled.** Always returns a fail-closed message (security advisory 2026-08-28) | No | No — no signing capability in this version |
 
 ### Write-tool maturity
 
 `exergynet_open_job` will remain disabled until a current Base L2 execution target is independently verified end-to-end — correct chain ID, correct contract identity, matching ABI, and a live settlement path (a real prover producing the ZK receipt that `settleExergy` requires) — and that verification is documented publicly. A version that re-enables it will state exactly which contract it targets and how a caller can independently confirm that before any transaction is possible. Until then: **no ExergyNet MCP tool in this package will ever ask for a private key or send a transaction.**
 
-For current, verified Base L2 contract addresses and settlement status, see [exergynet.org/proof.html](https://exergynet.org/proof.html) — do not rely on any address that may appear in an older cached copy of this README or an MCP directory listing that hasn't recrawled this repository yet.
+For current, verified Base L2 contract addresses and settlement status, see [exergynet.org/proof.html](https://exergynet.org/proof.html).
+
+---
+
+## Machine Discovery
+
+ExergyNet is built to be discovered by AI agents, not humans browsing a docs page.
+
+- **Well-known endpoint:** `https://exergynet.org/.well-known/exergynet.json` — capabilities manifest
+- **LLMs.txt:** `https://exergynet.org/llms.txt` — protocol description in model-readable form
+- **MCP server card:** `https://exergynet.org/.well-known/mcp/server-card.json`
+- **MCP Registry:** `io.github.ezumba/exergynet`
+
+---
+
+## Authority Boundary
+
+> **AI can propose consequences. AI cannot authorize its own consequences.**
+
+The Consequence Boundary (LNES-22) is architecturally separate from this server. This package exposes read-only program lookups and a local cost estimator. When `exergynet_open_job` is re-enabled, it will operate within your explicitly granted spending authority only — the model layer never holds signing credentials for consequential actions.
+
+See [SECURITY.md](SECURITY.md) for the x402 attack-class analysis and ExergyNet's architectural controls.
 
 ---
 
@@ -89,10 +121,13 @@ For current, verified Base L2 contract addresses and settlement status, see [exe
 
 ## Links
 
-- 🌐 [exergynet.org](https://exergynet.org)
-- 📦 [npm: exergynet-mcp-server](https://www.npmjs.com/package/exergynet-mcp-server)
-- 🐙 [GitHub](https://github.com/ezumba/exergynet-mcp-server)
-- 🗂️ [MCP Registry](https://registry.modelcontextprotocol.io) — `io.github.ezumba/exergynet`
+- [exergynet.org](https://exergynet.org)
+- [npm: exergynet-mcp-server](https://www.npmjs.com/package/exergynet-mcp-server)
+- [npm: @lnes/vanguard-memory-node](https://www.npmjs.com/package/@lnes/vanguard-memory-node) — companion local memory package
+- [GitHub](https://github.com/ezumba/exergynet-mcp-server)
+- [MCP Registry](https://registry.modelcontextprotocol.io) — `io.github.ezumba/exergynet`
+- [Whitepaper](https://exergynet.org/whitepaper.html)
+- [Benchmarks](https://exergynet.org/benchmarks.html)
 
 ---
 
