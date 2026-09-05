@@ -107,7 +107,7 @@ ExergyNet is built to be discovered by AI agents, not humans browsing a docs pag
 
 The Consequence Boundary (LNES-22) is architecturally separate from this server. This package exposes read-only program lookups and a local cost estimator. When `exergynet_open_job` is re-enabled, it will operate within your explicitly granted spending authority only — the model layer never holds signing credentials for consequential actions.
 
-See [SECURITY.md](SECURITY.md) for the x402 attack-class analysis and ExergyNet's architectural controls.
+See [SECURITY.md](https://github.com/ezumba/exergynet-mcp-server/blob/main/SECURITY.md) for the x402 attack-class analysis and ExergyNet's architectural controls.
 
 ---
 
